@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:context="http://www.springframework.org/schema/context" xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+    <context:annotation-config />
+    <bean id="batchingService" class="com.arnoldgalovics.blog.BatchingService" />
+
+    <!-- Database -->
+    <bean id="originalDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://localhost:3306/sessionbatching?useSSL=false" />
+        <property name="username" value="root" />
+        <property name="password" value="root" />
+    </bean>
+
+    <bean id="dataSource" class="net.ttddyy.dsproxy.support.ProxyDataSource">
+        <property name="dataSource" ref="originalDataSource" />
+        <property name="listener" ref="listeners" />
+    </bean>
+
+    <bean id="listeners" class="net.ttddyy.dsproxy.listener.ChainListener">
+        <property name="listeners">
+            <list>
+                <bean class="net.ttddyy.dsproxy.listener.SLF4JQueryLoggingListener">
+                    <property name="logLevel" value="INFO" />
+                </bean>
+                <bean class="net.ttddyy.dsproxy.listener.DataSourceQueryCountListener" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Hibernate -->
+    <bean id="jpaVendorAdapter" class="com.arnoldgalovics.blog.hibernate.CustomJpaVendorAdapter">
+        <property name="showSql" value="false" />
+        <property name="generateDdl" value="false" />
+        <property name="database" value="MYSQL" />
+    </bean>
+
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="jpaVendorAdapter" ref="jpaVendorAdapter" />
+        <property name="packagesToScan">
+            <list>
+                <value>com.arnoldgalovics.blog</value>
+            </list>
+        </property>
+        <property name="persistenceUnitPostProcessors">
+            <bean class="com.arnoldgalovics.blog.hibernate.HibernatePersistenceUnitPostProcessor"/>
+        </property>
+    </bean>
+    
+    <tx:annotation-driven transaction-manager="transactionManager" order="0" proxy-target-class="true" />
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+
+    <!-- Support for JdbcSize annotation -->
+    <aop:aspectj-autoproxy/>
+    <bean id="jdbcBatchSizeMethodInterceptor" class="com.arnoldgalovics.blog.batch.JdbcBatchSizeMethodInterceptor" depends-on="entityManagerFactory"/>
+    <bean id="jdbcBatchSizeAdvisor" class="com.arnoldgalovics.blog.batch.JdbcBatchSizeAdvisor" />
+</beans>
