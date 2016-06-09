@@ -14,7 +14,14 @@ public class JdbcBatchSizeMethodInterceptor implements MethodInterceptor {
     @Override
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         final Session session = entityManager.unwrap(Session.class);
+        final int originalBatchSize = session.getJdbcBatchSize() == null ? 0 : session.getJdbcBatchSize();
         session.setJdbcBatchSize(invocation.getMethod().getAnnotation(JdbcBatchSize.class).value());
-        return invocation.proceed();
+        Object result = null;
+        try {
+            result = invocation.proceed();
+        } finally {
+            session.setJdbcBatchSize(originalBatchSize);
+        }
+        return result;
     }
 }

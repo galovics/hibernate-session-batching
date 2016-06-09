@@ -40,5 +40,4 @@ public class JdbcBatchSizeAdvisor extends AbstractPointcutAdvisor {
     public int getOrder() {
         return Ordered.LOWEST_PRECEDENCE;
     }
-
 }
