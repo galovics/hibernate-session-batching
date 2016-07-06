@@ -34,7 +34,7 @@
     </bean>
 
     <!-- Hibernate -->
-    <bean id="jpaVendorAdapter" class="com.arnoldgalovics.blog.hibernate.CustomJpaVendorAdapter">
+    <bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
         <property name="showSql" value="false" />
         <property name="generateDdl" value="false" />
         <property name="database" value="MYSQL" />
