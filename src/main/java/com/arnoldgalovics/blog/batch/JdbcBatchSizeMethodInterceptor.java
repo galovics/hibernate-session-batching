@@ -27,6 +27,7 @@ public class JdbcBatchSizeMethodInterceptor implements MethodInterceptor {
         Object result = null;
         try {
             result = invocation.proceed();
+            entityManager.flush();
         } finally {
             try {
                 final Field field = AbstractSharedSessionContract.class.getDeclaredField("jdbcBatchSize");
